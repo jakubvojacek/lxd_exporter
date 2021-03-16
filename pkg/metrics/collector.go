@@ -89,14 +89,20 @@ func (collector *collector) Collect(ch chan<- prometheus.Metric) {
 
 	for _, containerName := range containerNames {
 		state, _, err := collector.server.GetContainerState(containerName)
-		containerInfo, tmp, tmp2 := collector.server.GetContainer(containerName)
+		containerInfo, _, err2 := collector.server.GetContainer(containerName)
 		if err != nil {
 			collector.logger.Printf(
 				"Can't query container state for `%s`: %s", containerName, err)
 			continue
 		}
 
-		collector.collectContainerMetrics(ch, containerName, containerInfo.Location, state)
+		if err2 != nil {
+			collector.logger.Printf(
+				"Can't query container location for `%s`: %s", containerName, err2)
+			continue
+		}
+
+		collector.collectContainerMetrics(ch, containerName, containerInfo.Location, containerInfo)
 	}
 }
 

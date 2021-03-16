@@ -102,7 +102,7 @@ func (collector *collector) Collect(ch chan<- prometheus.Metric) {
 			continue
 		}
 
-		collector.collectContainerMetrics(ch, containerName, containerInfo.Location, containerInfo)
+		collector.collectContainerMetrics(ch, containerName, containerInfo.Location, state)
 	}
 }
 

@@ -23,7 +23,7 @@ func NewCollector(
 var (
 	cpuUsageDesc = prometheus.NewDesc("lxd_container_cpu_usage",
 		"Container CPU Usage in Seconds",
-		[]string{"container_name"}, nil,
+		[]string{"container_name", "location"}, nil,
 	)
 	diskUsageDesc = prometheus.NewDesc("lxd_container_disk_usage",
 		"Container Disk Usage",
@@ -89,23 +89,25 @@ func (collector *collector) Collect(ch chan<- prometheus.Metric) {
 
 	for _, containerName := range containerNames {
 		state, _, err := collector.server.GetContainerState(containerName)
+		containerInfo := collector.server.GetContainer(containerName)
 		if err != nil {
 			collector.logger.Printf(
 				"Can't query container state for `%s`: %s", containerName, err)
 			continue
 		}
 
-		collector.collectContainerMetrics(ch, containerName, state)
+		collector.collectContainerMetrics(ch, containerName, containerInfo.location, state)
 	}
 }
 
 func (collector *collector) collectContainerMetrics(
 	ch chan<- prometheus.Metric,
 	containerName string,
+	containerLocation string,
 	state *lxdapi.ContainerState,
 ) {
 	ch <- prometheus.MustNewConstMetric(cpuUsageDesc,
-		prometheus.GaugeValue, float64(state.CPU.Usage), containerName)
+		prometheus.GaugeValue, float64(state.CPU.Usage), containerName, containerLocation)
 	ch <- prometheus.MustNewConstMetric(processCountDesc,
 		prometheus.GaugeValue, float64(state.Processes), containerName)
 	ch <- prometheus.MustNewConstMetric(

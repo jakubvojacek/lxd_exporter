@@ -27,41 +27,41 @@ var (
 	)
 	diskUsageDesc = prometheus.NewDesc("lxd_container_disk_usage",
 		"Container Disk Usage",
-		[]string{"container_name", "disk_device"}, nil,
+		[]string{"container_name", "location", "disk_device"}, nil,
 	)
 	networkUsageDesc = prometheus.NewDesc("lxd_container_network_usage",
 		"Container Network Usage",
-		[]string{"container_name", "interface", "operation"}, nil,
+		[]string{"container_name", "location", "interface", "operation"}, nil,
 	)
 
 	memUsageDesc = prometheus.NewDesc("lxd_container_mem_usage",
 		"Container Memory Usage",
-		[]string{"container_name"}, nil,
+		[]string{"container_name", "location"}, nil,
 	)
 	memUsagePeakDesc = prometheus.NewDesc("lxd_container_mem_usage_peak",
 		"Container Memory Usage Peak",
-		[]string{"container_name"}, nil,
+		[]string{"container_name", "location"}, nil,
 	)
 	swapUsageDesc = prometheus.NewDesc("lxd_container_swap_usage",
 		"Container Swap Usage",
-		[]string{"container_name"}, nil,
+		[]string{"container_name", "location"}, nil,
 	)
 	swapUsagePeakDesc = prometheus.NewDesc("lxd_container_swap_usage_peak",
 		"Container Swap Usage Peak",
-		[]string{"container_name"}, nil,
+		[]string{"container_name", "location"}, nil,
 	)
 
 	processCountDesc = prometheus.NewDesc("lxd_container_process_count",
 		"Container number of process Running",
-		[]string{"container_name"}, nil,
+		[]string{"container_name", "location"}, nil,
 	)
 	containerPIDDesc = prometheus.NewDesc("lxd_container_pid",
 		"Container PID",
-		[]string{"container_name"}, nil,
+		[]string{"container_name", "location"}, nil,
 	)
 	runningStatusDesc = prometheus.NewDesc("lxd_container_running_status",
 		"Container Running Status",
-		[]string{"container_name"}, nil,
+		[]string{"container_name", "location"}, nil,
 	)
 )
 
@@ -115,29 +115,29 @@ func (collector *collector) collectContainerMetrics(
 	ch <- prometheus.MustNewConstMetric(cpuUsageDesc,
 		prometheus.GaugeValue, float64(state.CPU.Usage), containerName, containerLocation)
 	ch <- prometheus.MustNewConstMetric(processCountDesc,
-		prometheus.GaugeValue, float64(state.Processes), containerName)
+		prometheus.GaugeValue, float64(state.Processes), containerName, containerLocation)
 	ch <- prometheus.MustNewConstMetric(
-		containerPIDDesc, prometheus.GaugeValue, float64(state.Pid), containerName)
+		containerPIDDesc, prometheus.GaugeValue, float64(state.Pid), containerName, containerLocation)
 
 	ch <- prometheus.MustNewConstMetric(memUsageDesc,
-		prometheus.GaugeValue, float64(state.Memory.Usage), containerName)
+		prometheus.GaugeValue, float64(state.Memory.Usage), containerName, containerLocation)
 	ch <- prometheus.MustNewConstMetric(memUsagePeakDesc,
-		prometheus.GaugeValue, float64(state.Memory.UsagePeak), containerName)
+		prometheus.GaugeValue, float64(state.Memory.UsagePeak), containerName, containerLocation)
 	ch <- prometheus.MustNewConstMetric(swapUsageDesc,
-		prometheus.GaugeValue, float64(state.Memory.SwapUsage), containerName)
+		prometheus.GaugeValue, float64(state.Memory.SwapUsage), containerName, containerLocation)
 	ch <- prometheus.MustNewConstMetric(swapUsagePeakDesc,
-		prometheus.GaugeValue, float64(state.Memory.SwapUsagePeak), containerName)
+		prometheus.GaugeValue, float64(state.Memory.SwapUsagePeak), containerName, containerLocation)
 
 	runningStatus := 0
 	if state.Status == "Running" {
 		runningStatus = 1
 	}
 	ch <- prometheus.MustNewConstMetric(runningStatusDesc,
-		prometheus.GaugeValue, float64(runningStatus), containerName)
+		prometheus.GaugeValue, float64(runningStatus), containerName, containerLocation)
 
 	for diskName, state := range state.Disk {
 		ch <- prometheus.MustNewConstMetric(diskUsageDesc,
-			prometheus.GaugeValue, float64(state.Usage), containerName, diskName)
+			prometheus.GaugeValue, float64(state.Usage), containerName, containerLocation, diskName)
 	}
 
 	for ethName, state := range state.Network {
@@ -150,7 +150,7 @@ func (collector *collector) collectContainerMetrics(
 
 		for opName, value := range networkMetrics {
 			ch <- prometheus.MustNewConstMetric(networkUsageDesc,
-				prometheus.GaugeValue, float64(value), containerName, ethName, opName)
+				prometheus.GaugeValue, float64(value), containerName, containerLocation, ethName, opName)
 		}
 	}
 }
